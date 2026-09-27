@@ -1,4 +1,0 @@
-[wokwi]
-version = 1
-firmware = 'build/esp32.esp32.esp32/wokwi_doniczki.ino.bin'
-elf = 'build/esp32.esp32.esp32/wokwi_doniczki.ino.elf'
