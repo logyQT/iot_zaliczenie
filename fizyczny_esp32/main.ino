@@ -26,7 +26,13 @@
 //   IP widoczne na view 3 (STATUS)
 //
 // Wymagane biblioteki: Adafruit SSD1306, Adafruit GFX, PubSubClient, ArduinoJson
+//
+// Sekrety (SSID/haslo WiFi + webhook Discord) trzymamy w secrets.h, ktory JEST
+// W .gitignore - do repo trafia tylko secrets.h.example. Kopiujesz example na
+// secrets.h, wpisujesz wlasne wartosci i dopiero wtedy kompilujesz.
 // ============================================================================
+
+#include "secrets.h"
 
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -38,9 +44,7 @@
 #include <Adafruit_SSD1306.h>
 #include <ArduinoJson.h>
 
-// ---- WiFi ----
-const char* WIFI_SSID = "nazwa-twojej-sieci";
-const char* WIFI_PASS = "twoje-haslo";
+// ---- WiFi ---- (SSID/haslo: secrets.h - patrz naglowek pliku)
 
 // ---- MQTT ----
 const char* MQTT_HOST   = "broker.hivemq.com";
@@ -49,10 +53,7 @@ const char* MQTT_TOPIC   = "KacperAlanMuszarski";
 const char* MQTT_CLIENT  = "esp32-display-kacper";
 const char* LED_TOPIC    = "KacperAlanMuszarski/led";  // stan diody do Wokwi (K3): "on"/"off"
 
-// ---- Discord webhook (powiadomienie o stanie diody) ----
-const char* DISCORD_WEBHOOK =
-    "https://discord.com/api/webhooks/ID_WEBHOOKA/TOKEN"
-    "TOKEN_WEBHOOKA";
+// ---- Discord webhook (powiadomienie o stanie diody) ---- (URL: secrets.h)
 
 // ---- OLED ----
 #define SCREEN_WIDTH  128

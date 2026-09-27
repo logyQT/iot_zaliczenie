@@ -1,0 +1,17 @@
+# Sekrety - nigdy nie trafiaja do repo
+secrets.h
+fizyczny_esp32/secrets.h
+
+# Artefakty budowy Arduino IDE / PlatformIO
+build/
+.pio/
+*.bin
+*.elf
+*.map
+*.merged.bin
+
+# Edytory / system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
