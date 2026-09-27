@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "author": "Kacper Alan Muszarski",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32dev",
+      "id": "esp1",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot1",
+      "top": 20,
+      "left": 340,
+      "attrs": { "value": "640" }
+    },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir1",
+      "top": 170,
+      "left": 340,
+      "attrs": { "delayTime": "1" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 300,
+      "left": 340,
+      "attrs": { "color": "green", "brightness": "0.8" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 340,
+      "left": 390,
+      "attrs": { "value": "220" }
+    }
+  ],
+  "connections": [
+    [ "pot1:SIG", "esp1:36", "green", [ "v" ] ],
+    [ "pot1:VCC", "esp1:3V3", "red", [ "v" ] ],
+    [ "pot1:GND", "esp1:GND.1", "black", [ "v" ] ],
+    [ "pir1:OUT", "esp1:16", "green", [ "v" ] ],
+    [ "pir1:VCC", "esp1:3V3", "red", [ "v" ] ],
+    [ "pir1:GND", "esp1:GND.1", "black", [ "v" ] ],
+    [ "led1:A", "r1:1", "green", [ "v" ] ],
+    [ "led1:K", "esp1:GND.1", "black", [ "v" ] ],
+    [ "r1:2", "esp1:25", "green", [ "v" ] ]
+  ],
+  "dependencies": {}
+}
