@@ -319,17 +319,97 @@ w repo znajduje się wyłącznie `secrets.h.example` z wartościami przykładowy
 
 ---
 
-## 8. Budowa czujników (symulacja Wokwi): do uzupełnienia
+## 8. Budowa czujników (symulacja Wokwi)
 
-> **Miejsce na dokumentację symulatora czujników** (ESP32 w Wokwi), który publikuje
-> dane na topik `KacperAlanMuszarski`. Uzupełnia ją członek zespołu odpowiedzialny
-> za czujniki. Do opisania:
->
-> - **schemat obwodu** - co jest podłączone do którego pinu ESP32,
-> - **poszczególne czujniki** - jak działają i jak odczyt ich wartości przekłada się
->   na pola payloadu (`wilgotnosc`, `status`, `ustrzeloneKoty`),
-> - **jak uruchomić symulację** i wygenerować dane widoczne na wyświetlaczu
->   i dashboardzie.
+> Symulator czujników działa w Wokwi (ESP32) i publikuje dane na topik `KacperAlanMuszarski`.
+> Kod, schemat i lista bibliotek są w folderze [`Wokwi/`](Wokwi/):
+> [`sketch.ino`](Wokwi/sketch.ino), [`diagram.json`](Wokwi/diagram.json), [`libraries.txt`](Wokwi/libraries.txt).
+
+### 8.1 Schemat połączeń
+
+Wirtualny ESP32 (`board-esp32-devkit-c-v4`) ma podłączone następujące elementy:
+
+| Element | Pin ESP32 | Rola |
+|---|---|---|
+| Potencjometr (symuluje czujnik wilgotności gleby) | GPIO34 (ADC) | wilgotność 0–100% |
+| Czujnik ruchu PIR | GPIO27 | wykrycie kota |
+| Przekaźnik 1 | GPIO26 | pompka do podlewania |
+| Przekaźnik 2 | GPIO25 | „pistolet na wodę” na kota |
+| Przycisk (pushbutton) | GPIO32, `INPUT_PULLUP` | zapala diodę lokalnie |
+| Dioda LED + rezystor 220 Ω | GPIO33 | zapalana przyciskiem, MQTT lub dashboardem |
+| Ekran OLED SSD1306 | SDA = GPIO21, SCL = GPIO22 | podgląd danych w symulacji |
+
+Zasilanie (3V3) i masa (`GND.1`–`GND.3`) są podłączone do wszystkich elementów. Pełny opis jest w pliku
+[`diagram.json`](Wokwi/diagram.json).
+
+Dwie pułapki, które wyszły przy budowie schematu i które warto znać przy ewentualnych zmianach:
+
+- Piny GPIO tej płytki w Wokwi nazywają się samą liczbą (`esp:21`, `esp:34`), **bez przedrostka `D`**.
+  Zła nazwa pinu nie daje błędu, tylko po cichu nie rysuje przewodu.
+- Przycisk ma nóżki `1.l`, `2.l`, `1.r`, `2.r`. Nóżki `1.l` i `1.r` to ta sama, zawsze zwarta nóżka,
+  więc przycisk trzeba podłączyć do dwóch nóżek o **różnych numerach** (u nas `1.l` i `2.l`).
+
+### 8.2 Czujniki i mapowanie na payload
+
+Wirtualny ESP32 publikuje co 5 sekund (z flagą `retain`) JSON w znanym już formacie:
+
+```json
+{"wilgotnosc": 42, "status": "PODLEJ", "ustrzeloneKoty": 3}
+```
+
+| Pole payloadu | Skąd pochodzi | Jak działa |
+|---|---|---|
+| `wilgotnosc` | potencjometr na GPIO34 | odczyt ADC 0–4095 przeskalowany do 0–100% |
+| `status` | wilgotność gleby | `OK` (≥ 60%), `PODLEJ` (30–59%), `SUCHO` (< 30%) |
+| `ustrzeloneKoty` | czujnik PIR na GPIO27 | licznik wykryć kota, zapisany w pamięci flash (przeżywa restart) |
+
+Zachowanie pozostałych elementów:
+
+- **Pompka (przekaźnik GPIO26)** włącza się, gdy wilgotność spada poniżej 60% (status `PODLEJ` lub `SUCHO`),
+  a wyłącza po osiągnięciu ok. 65% albo po 2 s (bezpiecznik czasowy).
+- **PIR (GPIO27)** po wykryciu ruchu uruchamia na 1,5 s przekaźnik „pistoletu” (GPIO25), zwiększa licznik
+  kotów i wysyła alert na Discorda. Kolejne wykrycie jest możliwe najwcześniej po 8 s.
+- **Dioda (GPIO33)** świeci, gdy wciśnięty jest przycisk **lub** ostatnia komenda na
+  `KacperAlanMuszarski/led` to `on` **lub** włączono ją z panelu WWW.
+
+Uwaga: status wysyłamy jako `OK` / `PODLEJ` / `SUCHO`, a w przykładzie w sekcji 2 pojawia się `dobry`.
+Pole `status` jest tekstem bez sztywnej listy wartości, więc nie psuje to działania, ale warto o tym pamiętać
+przy ewentualnym mapowaniu statusu na kolory na dashboardzie.
+
+### 8.3 Współpraca z fizycznym ESP32
+
+- Dane z symulacji trafiają na `KacperAlanMuszarski` (broker `broker.hivemq.com:1883`), skąd czyta je
+  fizyczny ESP32 i dashboard.
+- Symulacja **subskrybuje** `KacperAlanMuszarski/led`. Przycisk K3 na fizycznym ESP32 publikuje tam
+  `on` / `off` jako wiadomość retained, więc dioda w Wokwi reaguje od razu, a po restarcie symulacji
+  odtwarza ostatni stan.
+- Cała komunikacja idzie przez publiczny broker bez autoryzacji, więc topiki są widoczne dla każdego, kto je zna.
+
+### 8.4 Uruchomienie symulacji
+
+1. Wejdź na https://wokwi.com/projects/new/esp32.
+2. W zakładce `sketch.ino` wklej zawartość [`Wokwi/sketch.ino`](Wokwi/sketch.ino).
+3. W zakładce `diagram.json` wklej zawartość [`Wokwi/diagram.json`](Wokwi/diagram.json).
+4. W **Library Manager** dodaj: *Adafruit GFX Library*, *Adafruit SSD1306*, *PubSubClient*
+   (lista w [`Wokwi/libraries.txt`](Wokwi/libraries.txt)).
+5. (Opcjonalnie, dla alertów na Discordzie) wklej własny webhook w stałą `DISCORD_WEBHOOK_URL` w
+   `sketch.ino`. W repozytorium jest tylko placeholder, bo webhook to w praktyce hasło do kanału.
+6. Kliknij **Play**. Pierwsza kompilacja trwa zwykle 30–90 s (kolejka serwera budowania Wokwi).
+7. W Serialu pojawi się `WiFi połączone` i `MQTT: połączono z broker.hivemq.com`.
+
+Jak wygenerować dane do pokazania na ekranie i dashboardzie:
+
+- **Wilgotność:** przeciągnij pokrętło potencjometru. Wartość i status zmienią się w ciągu 5 s.
+- **Kot:** kliknij czujnik PIR na schemacie i wybierz **Simulate motion**. Licznik wzrośnie,
+  a na Discordzie pojawi się alert (po wpisaniu własnego webhooka).
+- **Dioda:** przytrzymaj przycisk w symulacji albo wyślij `on` / `off` na `KacperAlanMuszarski/led`.
+
+### 8.5 Znane ograniczenia symulacji
+
+- Wokwi udostępnia wirtualnemu ESP32 internet tylko **wychodzący**. Wbudowany serwer WWW symulatora
+  (`http://10.10.0.2/`) startuje, ale nie da się go otworzyć z przeglądarki. Na prawdziwym ESP32 w sieci
+  domowej działa normalnie. W symulacji dane i sterowanie diodą idą przez MQTT.
+
 
 ---
 
