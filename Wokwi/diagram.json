@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "author": "strażnik-rośliny",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 500, "attrs": {} },
+    { "type": "board-ssd1306", "id": "oled1", "top": -250, "left": 0, "attrs": { "i2cAddress": "0x3c" } },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": -50, "left": 0, "attrs": {} },
+    { "type": "wokwi-pir-motion-sensor", "id": "pir1", "top": 150, "left": 0, "attrs": {} },
+    { "type": "wokwi-relay-module", "id": "relayWater", "top": 350, "left": 0, "attrs": {} },
+    { "type": "wokwi-relay-module", "id": "relayCat", "top": 550, "left": 0, "attrs": {} },
+    { "type": "wokwi-pushbutton", "id": "btn1", "top": 750, "left": 20, "attrs": {} },
+    { "type": "wokwi-resistor", "id": "r1", "top": 950, "left": 0, "attrs": { "value": "220" } },
+    { "type": "wokwi-led", "id": "led1", "top": 950, "left": 150, "attrs": { "color": "red" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+
+    [ "esp:21", "oled1:SDA", "green", [] ],
+    [ "esp:22", "oled1:SCL", "yellow", [] ],
+    [ "esp:3V3", "oled1:VCC", "red", [] ],
+    [ "esp:GND.1", "oled1:GND", "black", [] ],
+
+    [ "esp:34", "pot1:SIG", "green", [] ],
+    [ "esp:3V3", "pot1:VCC", "red", [] ],
+    [ "esp:GND.2", "pot1:GND", "black", [] ],
+
+    [ "esp:27", "pir1:OUT", "green", [] ],
+    [ "esp:3V3", "pir1:VCC", "red", [] ],
+    [ "esp:GND.3", "pir1:GND", "black", [] ],
+
+    [ "esp:26", "relayWater:IN", "green", [] ],
+    [ "esp:3V3", "relayWater:VCC", "red", [] ],
+    [ "esp:GND.1", "relayWater:GND", "black", [] ],
+
+    [ "esp:25", "relayCat:IN", "green", [] ],
+    [ "esp:3V3", "relayCat:VCC", "red", [] ],
+    [ "esp:GND.2", "relayCat:GND", "black", [] ],
+
+    [ "esp:32", "btn1:1.l", "green", [] ],
+    [ "esp:GND.3", "btn1:2.l", "black", [] ],
+
+    [ "esp:33", "r1:1", "green", [] ],
+    [ "r1:2", "led1:A", "green", [] ],
+    [ "led1:C", "esp:GND.1", "black", [] ]
+  ],
+  "dependencies": {}
+}
