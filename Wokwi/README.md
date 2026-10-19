@@ -38,7 +38,8 @@ To wszystko zostało uruchomione naprawdę w symulatorze (nie tylko napisane w k
 
 - **WiFi**: ESP32 łączy się z siecią `Wokwi-GUEST` — to wirtualna, otwarta sieć symulatora z
   prawdziwym dostępem do internetu. Potwierdzone w Serialu: `WiFi połączone, IP: 10.10.0.2`.
-  Na fizycznym sprzęcie podmień `WIFI_SSID`/`WIFI_PASSWORD` w kodzie na dane swojej sieci domowej.
+  Na fizycznym sprzęcie dane sieci wpisujesz w `fizyczny_esp32/secrets.h` (nie w tym pliku) —
+  patrz sekcja 7 w głównym README.
 - **MQTT**: dane z czujników (wilgotność, status, liczba kotów) publikowane są co 5s na
   `tcp://broker.hivemq.com:1883`, topic **`KacperAlanMuszarski`**, jako JSON, np.:
   `{"wilgotnosc":42,"status":"OK","ustrzeloneKoty":2}` — z flagą `retain`, więc każdy kto

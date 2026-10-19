@@ -1,8 +1,8 @@
-# 🌱 Monitoring rośliny z ESP32: MQTT, dashboard WWW i powiadomienia na Discord
+# 🌱 Plantinel — monitoring rośliny z ESP32: MQTT, dashboard WWW i powiadomienia na Discord
 
 Projekt IoT monitorujący doniczkę: dane o wilgotności i detekcji kota są publikowane
 przez **ESP32 symulowany w Wokwi**, trafiają do **brokera MQTT (HiveMQ)**, skąd
-odczytuje je **fizyczny ESP32**. Płytki podłączony do WiFi udostępnia:
+odczytuje je **fizyczny ESP32**. Płytka podłączona do WiFi udostępnia:
 
 - **wyświetlacz OLED SSD1306** z trzema widokami przełączanymi przyciskami,
 - **dashboard WWW** (`http://<IP_ESP32>/`) w układzie pod telefon,
@@ -41,7 +41,7 @@ Celem projektu jest zbudowanie działającego systemu IoT „od czujnika do uży
    (trzy widoki: dane, słupki, status połączeń).
 4. **Prezentacja zdalna** - ten sam ESP32 pełni rolę serwera HTTP z dashboardem,
    który można otworzyć z poziomu telefonu w tej samej sieci WiFi.
-5. **Powiadomianie** - zmiana stanu diody (sterowanej z przycisku lub z dashboardu)
+5. **Powiadamianie** - zmiana stanu diody (sterowanej z przycisku lub z dashboardu)
    generuje powiadomienie wysyłane na kanał na Discordzie.
 
 Dzięki temu projekt obejmuje wszystkie warstwy typowego systemu IoT:
@@ -98,7 +98,7 @@ starsze lub nowsze wersje nadajników działają bez zmian w firmware:
 | Dane | Klucz podstawowy | Klucz zapasowy | Uwagi |
 |---|---|---|---|
 | Wilgotność | `wilgotnosc` (0-100) | `pot1` (0-1023) | surowy odczyt ADC przeliczany na % |
-| Stan | `status` | `stan` | tekst, np. `SUCHO`, `dobry` |
+| Stan | `status` | `stan` | tekst, np. `OK`, `PODLEJ`, `SUCHO` |
 | Koty | `ustrzeloneKoty` | `koty` | licznik odstraszonych kotów |
 
 Odebrana wiadomość zwiększa licznik `msgs` i odświeża znacznik czasu - jeśli przez
@@ -138,7 +138,7 @@ W firmware działa filtr *debounce* (30 ms).
 
 | ![Widok DANE/SLUPKI na wyświetlaczu](assets/fig1.webp) | ![Widok STATUS na wyświetlaczu](assets/fig2.webp) |
 |:---:|:---:|
-| *Widok danymi - suchość, stan, koty* | *Widok STATUS - WiFi, RSSI, IP, MQTT* |
+| *Widok z danymi - suchość, stan, koty* | *Widok STATUS - WiFi, RSSI, IP, MQTT* |
 
 ---
 
@@ -159,7 +159,7 @@ Plik `fizyczny_esp32/main.ino` to kompletny firmware odbiornika. Zawiera pięć 
 | # | Nazwa | Zawartość |
 |---|---|---|
 | 1/3 | **DANE** | wilgotność dużą czcionką, stan, liczba odstraszonych kotów, wiek danych |
-| 2/3 | **SLUPKI** | poziomicowy pasek wypełnienia wilgotności 0-100 %, stan, koty |
+| 2/3 | **SLUPKI** | poziomy pasek wypełnienia wilgotności 0-100 %, stan, koty |
 | 3/3 | **STATUS** | WiFi (`OK`/`BRAK`), siła sygnału RSSI, **adres IP**, MQTT, licznik wiadomości, czas ostatniej aktualizacji |
 
 W nagłówku każdego widoku jest numer `x/3`, a gdy dane przestają napływać -
@@ -224,6 +224,7 @@ stan WiFi i MQTT).
 | `GET /api` | aktualny stan jako JSON |
 | `GET /led/toggle` | przełącz diodę - dokładnie to samo co przycisk K3 |
 | `GET /led?state=on\|off` | ustaw diodę wprost (`1`, `true` też akceptowane) |
+| `GET /led` | bez parametru przełącza diodę (jak `/led/toggle`) |
 | `*` (inne) | `404` - odpowiedź `Nie ma` |
 
 Przykładowa odpowiedź `GET /api`:
@@ -324,6 +325,7 @@ w repo znajduje się wyłącznie `secrets.h.example` z wartościami przykładowy
 > Symulator czujników działa w Wokwi (ESP32) i publikuje dane na topik `KacperAlanMuszarski`.
 > Kod, schemat i lista bibliotek są w folderze [`Wokwi/`](Wokwi/):
 > [`sketch.ino`](Wokwi/sketch.ino), [`diagram.json`](Wokwi/diagram.json), [`libraries.txt`](Wokwi/libraries.txt).
+> Pełna instrukcja uruchomienia symulacji: [`Wokwi/README.md`](Wokwi/README.md).
 
 ### 8.1 Schemat połączeń
 
@@ -372,9 +374,8 @@ Zachowanie pozostałych elementów:
 - **Dioda (GPIO33)** świeci, gdy wciśnięty jest przycisk **lub** ostatnia komenda na
   `KacperAlanMuszarski/led` to `on` **lub** włączono ją z panelu WWW.
 
-Uwaga: status wysyłamy jako `OK` / `PODLEJ` / `SUCHO`, a w przykładzie w sekcji 2 pojawia się `dobry`.
-Pole `status` jest tekstem bez sztywnej listy wartości, więc nie psuje to działania, ale warto o tym pamiętać
-przy ewentualnym mapowaniu statusu na kolory na dashboardzie.
+Pole `status` jest tekstem bez sztywnej listy wartości - firmware i dashboard nie zakładają konkretnego
+zestawu, więc można je swobodnie rozszerzać (np. o nowe progi wilgotności).
 
 ### 8.3 Współpraca z fizycznym ESP32
 
@@ -431,7 +432,7 @@ Jak wygenerować dane do pokazania na ekranie i dashboardzie:
 ## 10. Struktura repozytorium
 
 ```
-iot_zajecia/
+plantinel/
 ├── README.md                    # ta dokumentacja
 ├── .gitignore                   # m.in. secrets.h i artefakty budowy
 ├── assets/                      # zdjęcia i zrzuty ekranu
@@ -440,10 +441,15 @@ iot_zajecia/
 │   ├── fig3.webp                # Discord - przykładowe alerty
 │   ├── fig4.webp                # dashboard WWW na telefonie
 │   └── fig5.webp                # Discord - powiadomienie o diodzie
-└── fizyczny_esp32/
-    ├── main.ino                 # firmware: MQTT + OLED + HTTP + Discord
-    ├── secrets.h.example        # wzorzec sekretów (trafia do repo)
-    └── secrets.h                # Twoje sekrety (lokalnie, w .gitignore)
+├── fizyczny_esp32/
+│   ├── main.ino                 # firmware: MQTT + OLED + HTTP + Discord
+│   ├── secrets.h.example        # wzorzec sekretów (trafia do repo)
+│   └── secrets.h                # Twoje sekrety (lokalnie, w .gitignore)
+└── Wokwi/
+    ├── README.md                # instrukcja uruchomienia symulacji
+    ├── sketch.ino               # kod symulowanego ESP32 (publisher MQTT)
+    ├── diagram.json             # schemat połączeń dla Wokwi
+    └── libraries.txt            # wymagane biblioteki Arduino
 ```
 
 ---
